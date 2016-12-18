@@ -146,8 +146,8 @@ const getNpmLayerImageName = hash => {
 const imageExists = (imageName) => {
   const commandString = `docker images -q ${imageName}`;
   const eh = exec(commandString, { silent: true });
-  if (eh.code === 0 && isImageHash.test(eh.stdout.trim())) {
-    // console.log(imageName, 'isImage', eh.code, isImageHash.test(eh.stdout.trim()), 'stdout', eh.stdout.trim(), 'stderr', eh.stderr.trim());
+  // if ((eh.code === 0) && isImageHash.test(eh.stdout.trim())) {
+  if (eh.code === 0) {
     return true;
   }
   return false;
@@ -301,7 +301,7 @@ const tag = (pkg, args = []) => {
   const gitTag = getGitTag();
   const fromTag = `${name}:${gitTag}`;
   if (!imageExists(fromTag)) {
-    console.error(` * error: could not find ${fromTag}`);
+    console.error(` * tag error: could not find ${fromTag}`);
     return 1;
   }
 
