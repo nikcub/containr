@@ -1,16 +1,10 @@
 node_modules/
-.svn
 .tmp
 .DS_Store
-.vscode/chrome/
-bower_components/
 *.log
 .env
-typings/
 obj/
 ~*
-.test/
-.tox/
 *.swp
 lib/
 bin/
