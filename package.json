@@ -15,7 +15,7 @@
     "build:clean": "rm -rf lib && mkdir lib",
     "build:app": "babel -d ./app ./src -s",
     "build:lib": "babel -d ./lib ./src -s",
-    "build": "npm run build:clean && npm run build:lib && npm run build:bin",
+    "build": "npm run build:clean && npm run build:lib",
     "docker:build": "docker-build && docker-push",
     "dev": "npm run build:clean && babel ./src/ -d lib -s -w"
   },
