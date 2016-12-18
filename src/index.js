@@ -210,7 +210,7 @@ const getNpmLayer = (pkg) => {
     };
   }
     // we need to build the image;
-  const dockerFileContent = renderFile('Dockerfile.npm-layer', { pkg });
+  const dockerFileContent = renderFile('Dockerfile.npm-layer.ejs', { pkg });
   if (!dockerFileContent) {
     return {
       success: false,
