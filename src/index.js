@@ -5,9 +5,14 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import tmp from 'tmp';
+import mkdirp from 'mkdirp';
+import rmdir from 'rmdir';
 
 const npmPackageName = /^(?:@([^/]+?)[/])?([^/]+?)$/;
 const isImageHash = /[a-f0-9]{12}/igm;
+
+tmp.setGracefulCleanup();
+
 
 /**
  * Run command for 'run' (default) on cli
@@ -141,7 +146,8 @@ const getNpmLayerImageName = hash => {
 const imageExists = (imageName) => {
   const commandString = `docker images -q ${imageName}`;
   const eh = exec(commandString, { silent: true });
-  if (eh.code === 0 && isImageHash.test(eh.stdout)) {
+  if (eh.code === 0 && isImageHash.test(eh.stdout.trim())) {
+    // console.log(imageName, 'isImage', eh.code, isImageHash.test(eh.stdout.trim()), 'stdout', eh.stdout.trim(), 'stderr', eh.stderr.trim());
     return true;
   }
   return false;
@@ -193,7 +199,10 @@ const buildContainer = (options = {}) => {
 };
 
 const writeTempFile = (content) => {
-  const tf = tmp.fileSync({ mode: '0644', dir: process.cwd(), prefix: 'containr-', postfix: '' });
+  // const tmpDir = tmp.dirSync({ mode: '0750', prefix: '.tmpContainr', dir: process.cwd() });
+  const rndStr = (new Date().getTime()) || '001100';
+  const tmpDir = mkdirp.sync(path.join(process.cwd(), '.tmpcontainr'));
+  const tf = tmp.fileSync({ mode: '0644', dir: tmpDir, prefix: 'containr-', postfix: '' });
   fs.writeFileSync(tf.fd, content);
   return tf.name;
 };
@@ -205,6 +214,7 @@ const getNpmLayer = (pkg) => {
   if (imageExists(npmLayerImageName)) {
     console.info(` * npm layer image: ${npmLayerImageName}`);
     return {
+      success: true,
       name: npmLayerImageName,
       hash: '',
     };
@@ -343,7 +353,16 @@ const push = (pkg, args = []) => {
 };
 
 const release = (pkg, args = []) => {
-  const ret = build(pkg, args);
+  const ret = tag(pkg, args);
+  if (ret === 0) {
+    const ret2 = push(pkg);
+    if (ret2 === 0) {
+      console.log(' * released.');
+      return 0;
+    }
+  }
+  // console.log(' * errors');
+  return 1;
 };
 
 const run = ({ pkg, command, args }) => {
@@ -370,7 +389,12 @@ const run = ({ pkg, command, args }) => {
       process.exit(1);
   }
 
-  process.exit(returnCode);
+  const tmpPath = path.join(process.cwd(), '.tmpcontainr');
+  rmdir(tmpPath, () => {
+    console.log(' * cleanup');
+    process.exit(returnCode);
+  });
+
 };
 
 export default {
