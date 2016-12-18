@@ -146,8 +146,8 @@ const getNpmLayerImageName = hash => {
 const imageExists = (imageName) => {
   const commandString = `docker images -q ${imageName}`;
   const eh = exec(commandString, { silent: true });
-  // if ((eh.code === 0) && isImageHash.test(eh.stdout.trim())) {
-  if (eh.code === 0) {
+  const hashValue = eh.stdout.trim();
+  if (eh.code === 0 && hashValue.match(isImageHash)) {
     return true;
   }
   return false;
@@ -177,7 +177,7 @@ const buildContainer = (options = {}) => {
   }
 
   const commandString = `docker build -t ${name} ${optionsStr} -f ${dockerfile} ${context}`;
-  // console.log(`Building: ${commandString}`);
+  console.log(`Building: ${commandString}`);
   const buildExec = exec(commandString, { silent: true });
 
   if (buildExec.code === 0) {
@@ -269,10 +269,10 @@ const build = (pkg, args = []) => {
   if (!npmlayer.success) {
     return 1;
   }
+  // console.log(npmlayer);
   const containr = {
     imageName: parsePackageName(pkg.name),
   };
-  const { name: npmlayername } = npmlayer;
   const labels = getPackageLabels(pkg);
   const dockerFileContent = renderFile(dockerfile, {
     pkg,
@@ -280,6 +280,7 @@ const build = (pkg, args = []) => {
     containr,
     npmlayer,
   });
+  // console.log(dockerFileContent);
   const dockerFilePath = writeTempFile(dockerFileContent);
   const gitTag = getGitTag();
   const imageHash = buildContainer({
@@ -344,7 +345,7 @@ const push = (pkg, args = []) => {
   // const gitTag = getGitTag();
   const imgName = `${name}:${version}`;
   if (!imageExists(imgName)) {
-    console.error(` * error: could not find ${imgName}`);
+    console.error(` * push error: could not find ${imgName}`);
     return 1;
   }
 
