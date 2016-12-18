@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "preversion": "npm run build",
-    "postversion": "git push -u origin --all && npm publish --access restricted",
+    "postversion": "git push -u origin --all && npm publish",
     "build:clean": "rm -rf lib && mkdir lib",
     "build:app": "babel -d ./app ./src -s",
     "build:lib": "babel -d ./lib ./src -s",
