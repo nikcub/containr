@@ -200,9 +200,10 @@ const buildContainer = (options = {}) => {
 
 const writeTempFile = (content) => {
   // const tmpDir = tmp.dirSync({ mode: '0750', prefix: '.tmpContainr', dir: process.cwd() });
-  const rndStr = (new Date().getTime()) || '001100';
-  const tmpDir = mkdirp.sync(path.join(process.cwd(), '.tmpcontainr'));
-  const tf = tmp.fileSync({ mode: '0644', dir: tmpDir, prefix: 'containr-', postfix: '' });
+  // const rndStr = (new Date().getTime()) || '001100';
+  // const tmpDir = mkdirp.sync(path.join(process.cwd(), '.tmpcontainr'));
+  const tmpDir = process.cwd();
+  const tf = tmp.fileSync({ mode: '0644', dir: tmpDir, prefix: '.tmp-containr-', postfix: '' });
   fs.writeFileSync(tf.fd, content);
   return tf.name;
 };
