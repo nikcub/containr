@@ -162,11 +162,11 @@ const buildContainer = (options = {}) => {
     context: '.',
   }, options);
 
-  const { dockerfile, cmdOptions, name, context } = userOptions;
-  let { version } = userOptions;
+  const { dockerfile, cmdOptions, version, context } = userOptions;
+  let { name } = userOptions;
 
   if (version.length) {
-    version = `:${version}`;
+    name = `${name}:${version}`;
   }
 
   let optionsStr;
@@ -176,7 +176,7 @@ const buildContainer = (options = {}) => {
     optionsStr = '';
   }
 
-  const commandString = `docker build -t ${name}${version} ${optionsStr} -f ${dockerfile} ${context}`;
+  const commandString = `docker build -t ${name} ${optionsStr} -f ${dockerfile} ${context}`;
   // console.log(`Building: ${commandString}`);
   const buildExec = exec(commandString, { silent: true });
 
