@@ -106,6 +106,7 @@ const renderFile = (templateName, vars = {}, options = {}) => {
     path.join(process.cwd(), 'share'),
     __dirname,
     path.join(__dirname, 'share'),
+    path.join(__dirname, '..', 'share'),
   ];
   for (let templateDir of templateSearchPaths) {
     templatePath = path.join(templateDir, templateFileName);
@@ -117,8 +118,8 @@ const renderFile = (templateName, vars = {}, options = {}) => {
   try {
     templateContent = fs.readFileSync(templatePath).toString('utf-8');
   } catch (error) {
-    console.error(`No such file or read error: ${error.message}`);
-    return '';
+    console.error(` * error: no such file or read error: ${error.message}`);
+    return false;
   }
   try {
     templateRendered = ejs.render(templateContent, vars, options);
@@ -167,7 +168,7 @@ const buildContainer = (options = {}) => {
   }
 
   const commandString = `docker build -t ${name}${version} ${optionsStr} -f ${dockerfile} ${context}`;
-  console.log(`Building: ${commandString}`);
+  // console.log(`Building: ${commandString}`);
   const buildExec = exec(commandString, { silent: true });
 
   if (buildExec.code === 0) {
@@ -199,6 +200,7 @@ const getNpmLayer = (pkg) => {
   const npmLayerHash = getNpmLayerHash(pkgVersionString);
   const npmLayerImageName = getNpmLayerImageName(npmLayerHash);
   if (imageExists(npmLayerImageName)) {
+    console.info(` * npm layer image: ${npmLayerImageName}`);
     return {
       name: npmLayerImageName,
       hash: '',
@@ -206,6 +208,11 @@ const getNpmLayer = (pkg) => {
   }
     // we need to build the image;
   const dockerFileContent = renderFile('Dockerfile.npm-layer', { pkg });
+  if (!dockerFileContent) {
+    return {
+      success: false,
+    };
+  }
   const dockerFilePath = writeTempFile(dockerFileContent);
   const npmContainer = buildContainer({
     dockerfile: dockerFilePath,
@@ -214,7 +221,7 @@ const getNpmLayer = (pkg) => {
 
   if (npmContainer.success) {
     const { name, version, hash } = npmContainer;
-    console.log(` * New image built ${name}:${version} => ${hash}`);
+    console.log(` * new npm layer image built ${name}:${version} => ${hash}`);
   } else {
     console.error('Build error');
   }
@@ -245,12 +252,14 @@ const build = (pkg, args = []) => {
   }
   console.info(` => ${name}@${version} building ${dockerfile}`);
   const npmlayer = getNpmLayer(pkg);
+  if (!npmlayer.success) {
+    return 1;
+  }
   const containr = {
     imageName: parsePackageName(pkg.name),
   };
   const { name: npmlayername } = npmlayer;
   const labels = getPackageLabels(pkg);
-  console.info(` * npm layer image: ${npmlayername}`);
   const dockerFileContent = renderFile(dockerfile, {
     pkg,
     labels,
