@@ -7,19 +7,3 @@ end_of_line = lf
 charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
-
-[Makefile]
-indent_style = tab
-indent_size = 4
-
-[Gruntfile]
-indent_style = space
-indent_size = 2
-
-[*.less]
-indent_size = 4
-indent_style = space
-
-[*.pug]
-indent_size = 4
-indent_style = space
