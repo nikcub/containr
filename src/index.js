@@ -100,7 +100,9 @@ const renderFile = (templateName, vars = {}, options = {}) => {
   let templateRendered;
   let templateContent;
   let templatePath;
-  const templateFileName = (!templateName.endsWith('.ejs')) ? `${templateName}.ejs` : templateName;
+  // const templateFileName = (!templateName.endsWith('.ejs')) ? `${templateName}.ejs` : templateName;
+  const templateFileName = templateName;
+
   const templateSearchPaths = [
     process.cwd(),
     path.join(process.cwd(), 'share'),
@@ -108,6 +110,7 @@ const renderFile = (templateName, vars = {}, options = {}) => {
     path.join(__dirname, 'share'),
     path.join(__dirname, '..', 'share'),
   ];
+
   for (let templateDir of templateSearchPaths) {
     templatePath = path.join(templateDir, templateFileName);
     if (fs.existsSync(templatePath)) {
