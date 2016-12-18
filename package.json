@@ -25,6 +25,7 @@
   "files": [
     "lib",
     "bin",
+    "share",
     "README.md",
     "LICENSE"
   ],
