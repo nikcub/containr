@@ -8,8 +8,7 @@
   "editor.renderWhitespace": true,
   "files.exclude": {
         ".git": true,
-        "node_modules": true,
-        ".vscode/chrome": true
+        "node_modules": true
     },
     "search.exclude": {
         ".git": true,
