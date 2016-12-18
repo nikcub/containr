@@ -1,0 +1,10 @@
+{
+    "presets": [
+      "node6"
+    ],
+    "plugins": [
+      "transform-runtime",
+      "add-module-exports",
+      "lodash"
+    ]
+}

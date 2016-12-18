@@ -1,0 +1,15 @@
+{
+  "extends": "airbnb",
+  "env": {
+    "node": true,
+    "es6": true
+  },
+  "parser": "babel-eslint",
+  "plugins": [
+      "import"
+  ],
+  "rules": {
+    "max-len": ["error", 120],
+    "no-console": 0
+  }
+}

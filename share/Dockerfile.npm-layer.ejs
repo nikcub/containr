@@ -1,0 +1,9 @@
+FROM estateagents/node-dev:latest
+
+<% if (pkg.author) { %>
+MAINTAINER <%= pkg.author %>
+<% } %>
+LABEL description="npmlayer"
+
+ADD package.json /npmcache/package.json
+RUN cd /npmcache && npm install

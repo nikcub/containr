@@ -1,0 +1,21 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+  "editor.glyphMargin": true,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "editor.wrappingColumn": 120,
+  "editor.renderWhitespace": true,
+  "files.exclude": {
+        ".git": true,
+        "node_modules": true,
+        ".vscode/chrome": true
+    },
+    "search.exclude": {
+        ".git": true,
+        "node_modules": true,
+        "bin": true,
+        "lib": true,
+        "out": true
+    }
+}
