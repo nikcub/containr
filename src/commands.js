@@ -7,8 +7,8 @@
 import path from 'path';
 import l, { logLevels } from './logger';
 import { getLocalPkg, getGitTag, parsePackageName } from './pkg';
-import docker, { buildContainer, imageExists } from './docker';
-import { renderFile, isEjs } from './templating';
+import docker, { imageExists } from './docker';
+import templating from './templating';
 import packageJson from '../package.json';
 
 let defaultRunCommandOptions = {
@@ -46,17 +46,18 @@ export const build = (buildFile = 'Dockerfile', options = {}) => {
 
   let filePath = null;
 
-  if (isEjs(buildFile)) {
-    filePath = renderFile(buildFile, pkgLocal);
+  if (templating.isEjs(buildFile)) {
+    filePath = templating.renderFile(buildFile, { pkg: pkgLocal });
   } else {
     filePath = path.resolve(process.cwd(), buildFile);
   }
 
   const gitTag = getGitTag();
-  const imageHash = buildContainer({
+  const imageHash = docker.buildImage({
     dockerfile: filePath,
     version: gitTag,
     name: parsePackageName(pkgLocal.name),
+    verbose: options.verbose,
   });
 
   if (!imageHash.success) {
@@ -83,7 +84,7 @@ export const tag = (tagVersion = '', options = {}) => {
 
   const fromTag = `${containerName}:${gitTag}`;
 
-  if (!imageExists(fromTag)) {
+  if (!docker.imageExists(fromTag)) {
     l.error(`Error: could not find ${fromTag}`);
     return false;
   }
@@ -110,15 +111,7 @@ export const tag = (tagVersion = '', options = {}) => {
  *
  */
 export const test = (pkg, args = []) => {
-  // const name = parsePackageName(pkg.name);
-  // const gitTag = getGitTag();
-  // const imgName = `${name}:${gitTag}`;
-  // if (!imageExists(imgName)) {
-  //   build(pkg, args);
-  // }
   // const execCommand = `docker run --rm -P ${imgName}`;
-  // const eh = exec(execCommand);
-  // return eh.code;
 };
 
 /**
@@ -144,7 +137,7 @@ export const push = (tagVersion = '', options = {}) => {
 
   localTags.forEach((localTag) => {
     const imageNameTagged = `${imageName}:${localTag}`;
-    if (imageExists(imageNameTagged)) {
+    if (docker.imageExists(imageNameTagged)) {
       const pushExec = docker.pushImage({
         tag: imageNameTagged,
         verbose: options.verbose,
