@@ -3,6 +3,7 @@ import path from 'path';
 import ejs from 'ejs';
 import tmp from 'tmp';
 import { getNpmLayer } from './layer';
+import l from './logger';
 import pkg from './pkg';
 
 tmp.setGracefulCleanup();
@@ -55,15 +56,16 @@ export const writeTempFile = (content) => {
 };
 
 export const renderTemplate = (templateContent, vars = {}) => {
+  // @TODO cleanup vars in templates
   const pkgLocal = pkg.getLocalPkg();
-  const labels = pkg.getPackageLabels(pkg);
+  const labels = pkg.getPackageLabels(pkgLocal);
 
   const layer = Object.assign({
-    npm: baseLayer => getNpmLayer(baseLayer, pkg),
+    npm: baseLayer => getNpmLayer(baseLayer, pkgLocal),
   }, vars.layer || {});
 
   const containr = Object.assign({
-    imageName: pkg.parsePackageName(pkg.name),
+    imageName: pkg.parsePackageName(pkgLocal.name),
   }, vars.containr || {});
 
   // const templateVars = Object.assign({
