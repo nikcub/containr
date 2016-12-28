@@ -3,7 +3,7 @@ import path from 'path';
 import ejs from 'ejs';
 import tmp from 'tmp';
 import { getNpmLayer } from './layer';
-import { parsePackageName, getPackageLabels } from './pkg';
+import pkg from './pkg';
 
 tmp.setGracefulCleanup();
 
@@ -54,27 +54,26 @@ export const writeTempFile = (content) => {
   return tf.name;
 };
 
-export const renderTemplate = (templateContent, pkg = {}) => {
+export const renderTemplate = (templateContent, vars = {}) => {
+  const pkgLocal = pkg.getLocalPkg();
+  const labels = pkg.getPackageLabels(pkg);
 
-  // const npmlayer = getNpmLayer(pkg);
-  // if (!npmlayer.success) {
-    // return 1;
-  // }
-  // console.log(npmlayer);
-  const layer = {
+  const layer = Object.assign({
     npm: baseLayer => getNpmLayer(baseLayer, pkg),
-  };
+  }, vars.layer || {});
 
-  const containr = {
-    imageName: parsePackageName(pkg.name),
-  };
+  const containr = Object.assign({
+    imageName: pkg.parsePackageName(pkg.name),
+  }, vars.containr || {});
 
-  const labels = getPackageLabels(pkg);
+  // const templateVars = Object.assign({
+  // })
+
   const dockerFileContent = renderContent(templateContent, {
-    pkg,
+    pkg: pkgLocal,
     labels,
-    containr,
     layer,
+    containr,
   }, {
     // debug: true,
   });
@@ -84,9 +83,9 @@ export const renderTemplate = (templateContent, pkg = {}) => {
   return dockerFilePath;
 };
 
-export const renderFile = (fileName, pkg = {}) => {
+export const renderFile = (fileName, vars = {}) => {
   const templateContent = getTemplate(fileName);
-  return renderTemplate(templateContent, pkg);
+  return renderTemplate(templateContent, vars);
 };
 
 export const getExtension = (filename = '') => {

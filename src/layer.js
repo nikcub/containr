@@ -1,9 +1,9 @@
 import path from 'path';
 import { exec } from 'shelljs';
 import crypto from 'crypto';
-import { imageExists, buildContainer } from './docker';
-import { getDependancies } from './pkg';
-import { renderFile } from './templating';
+import docker from './docker';
+import pkg, { getDependancies } from './pkg';
+import templating from './templating';
 import l from './logger';
 
 
@@ -57,22 +57,27 @@ const getLayerImageName = (pkg) => {
 /**
  * getNpmLayer
  */
-export const getNpmLayer = (baseImg, pkg) => {
+export const getNpmLayer = (baseImg = 'mhart/alpine-node', pkg) => {
   const npmLayerImageName = getLayerImageName(pkg);
 
   l.info(`package layer npm: ${npmLayerImageName}`);
 
-  if (imageExists(npmLayerImageName)) {
+  if (docker.imageExists(npmLayerImageName)) {
     l.verbose(`npm layer image found: ${npmLayerImageName}`);
     return npmLayerImageName;
   } else {
     l.verbose('npm layer not found building');
   }
 
-    // we need to build the image;
-  const dockerFile = renderFile('Dockerfile.npm-layer.ejs', { pkg });
+  // we need to build the image;
+  const dockerFile = templating.renderFile('Dockerfile.npm-layer.ejs', {
+    pkg,
+    containr: {
+      baseImg,
+    },
+  });
 
-  const npmContainer = buildContainer({
+  const npmContainer = docker.buildImage({
     dockerfile: dockerFile,
     name: npmLayerImageName,
   });
@@ -81,7 +86,7 @@ export const getNpmLayer = (baseImg, pkg) => {
     const { name, version, hash } = npmContainer;
     l.info(`new npm layer image built ${name}:${version} => ${hash}`);
   } else {
-    l.error('Build error');
+    l.error(`${npmContainer.message}`);
   }
 
   return npmContainer.name;

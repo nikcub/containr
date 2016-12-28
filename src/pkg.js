@@ -104,4 +104,7 @@ export default {
   getPackageLabels,
   parsePackageName,
   getGitTag,
+  getLocalPkg,
+  getDependancies,
+  getDependanciesCommand,
 };

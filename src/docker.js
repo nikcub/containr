@@ -73,16 +73,17 @@ export const pushImage = (options = {}) => {
 };
 
 
-export const buildContainer = (options = {}) => {
+export const buildImage = (options = {}) => {
   const userOptions = Object.assign({}, {
     dockerfile: 'Dockerfile',
     cmdOptions: ['--force-rm'],
     name: 'temp-container',
     version: '',
     context: '.',
+    verbose: false,
   }, options);
 
-  const { dockerfile, cmdOptions, version, context } = userOptions;
+  const { dockerfile, cmdOptions, version, context, verbose } = userOptions;
   let { name } = userOptions;
 
   if (version.length) {
@@ -100,6 +101,10 @@ export const buildContainer = (options = {}) => {
   l.debug(`Building: ${commandString}`);
   const buildExec = exec(commandString, { silent: true });
 
+  if (verbose && buildExec.stdout.length) {
+    l.debug(buildExec.stdout);
+  }
+
   if (buildExec.code === 0) {
     const [, buildId] = buildExec.stdout.match(/Successfully built ([a-f0-9]{12})/im);
     return {
@@ -111,10 +116,10 @@ export const buildContainer = (options = {}) => {
   }
 
   const errMsg = buildExec.stderr.split('\n').filter(x => x.length > 0).join(' ');
-  l.error(`build error: ${errMsg}`);
 
   return {
     success: false,
+    message: errMsg,
   };
 };
 
@@ -122,5 +127,5 @@ export default {
   imageExists,
   tagContainer,
   pushImage,
-  buildContainer,
+  buildImage,
 };
