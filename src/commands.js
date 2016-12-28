@@ -1,0 +1,179 @@
+/**
+ * Containr commands for cli
+ *
+ * see README
+ */
+
+import path from 'path';
+import l, { logLevels } from './logger';
+import { getLocalPkg, getGitTag, parsePackageName } from './pkg';
+import docker, { buildContainer, imageExists } from './docker';
+import { renderFile, isEjs } from './templating';
+import packageJson from '../package.json';
+
+let defaultRunCommandOptions = {
+  imagefile: 'Dockerfile',
+  production: false,
+  development: false,
+  client: true,
+  server: false,
+  watch: false,
+  configFile: 'builder.config.js'
+};
+
+/**
+ * Print a banner on application startup
+ */
+export const printBanner = () => {
+  const version = packageJson.version;
+  l.banner(`containr v${version}`);
+};
+
+/**
+ * Build the current image
+ */
+export const build = (buildFile = 'Dockerfile', options = {}) => {
+  const buildEnv = (options.production) ? 'production' : 'development';
+  const pkgLocal = getLocalPkg();
+  const { name, version } = pkgLocal;
+
+  if (options.verbose) {
+    l.setLevel(logLevels.debug);
+  }
+
+  l.info(`Building ${name}@${version} from ${buildFile}`);
+  l.debug(`Mode: ${buildEnv}`);
+
+  let filePath = null;
+
+  if (isEjs(buildFile)) {
+    filePath = renderFile(buildFile, pkgLocal);
+  } else {
+    filePath = path.resolve(process.cwd(), buildFile);
+  }
+
+  const gitTag = getGitTag();
+  const imageHash = buildContainer({
+    dockerfile: filePath,
+    version: gitTag,
+    name: parsePackageName(pkgLocal.name),
+  });
+
+  if (!imageHash.success) {
+    l.error(`build error: ${imageHash}`);
+    return false;
+  }
+
+  const { name: imgName, version: imgVersion, hash } = imageHash;
+  l.info(`built ${imgName}:${imgVersion} => ${hash}`);
+  return true;
+};
+
+/**
+ *
+ */
+export const tag = (tagVersion = '', options = {}) => {
+  const pkgLocal = getLocalPkg();
+  const containerName = parsePackageName(pkgLocal.name);
+  const gitTag = getGitTag();
+
+  if (options.verbose) {
+    l.setLevel(logLevels.debug);
+  }
+
+  const fromTag = `${containerName}:${gitTag}`;
+
+  if (!imageExists(fromTag)) {
+    l.error(`Error: could not find ${fromTag}`);
+    return false;
+  }
+
+  const version = (tagVersion) ? tagVersion : pkgLocal.version;
+  const toTag = `${containerName}:${version}`;
+
+  const tagExec = docker.tagContainer({
+    from: fromTag,
+    to: toTag,
+    verbose: options.verbose,
+  });
+
+  if (tagExec.success) {
+    l.info(`Tagged as: ${toTag}`);
+    return true;
+  }
+
+  l.error(`${tagExec.message}`);
+  return false;
+};
+
+/**
+ *
+ */
+export const test = (pkg, args = []) => {
+  // const name = parsePackageName(pkg.name);
+  // const gitTag = getGitTag();
+  // const imgName = `${name}:${gitTag}`;
+  // if (!imageExists(imgName)) {
+  //   build(pkg, args);
+  // }
+  // const execCommand = `docker run --rm -P ${imgName}`;
+  // const eh = exec(execCommand);
+  // return eh.code;
+};
+
+/**
+ *
+ */
+export const push = (tagVersion = '', options = {}) => {
+  const pkgLocal = getLocalPkg();
+  const imageName = parsePackageName(pkgLocal.name);
+  const gitTag = getGitTag();
+  const containerVersion = pkgLocal.version;
+
+  if (options.verbose) {
+    l.setLevel(logLevels.debug);
+  }
+
+  let localTags = [];
+
+  if (tagVersion) {
+    localTags = [tagVersion];
+  } else {
+    localTags = ['latest', containerVersion, gitTag];
+  }
+
+  localTags.forEach((localTag) => {
+    const imageNameTagged = `${imageName}:${localTag}`;
+    if (imageExists(imageNameTagged)) {
+      const pushExec = docker.pushImage({
+        tag: imageNameTagged,
+        verbose: options.verbose,
+      });
+
+      if (pushExec.success) {
+        l.info(`Pushed: ${imageNameTagged}`);
+      }
+    } else if (tagVersion) {
+      l.warn(`Tag not found: ${imageName}${tagVersion}`);
+    }
+  });
+
+};
+
+/**
+ *
+ */
+export const release = (pkg, args = []) => {
+  tag('latest');
+  push();
+};
+
+
+export default {
+  printBanner,
+  build,
+  tag,
+  test,
+  push,
+  release,
+};
