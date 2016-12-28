@@ -1,4 +1,4 @@
-FROM estateagents/node-dev:latest
+FROM <%= containr.baseImg %>
 
 <% if (pkg.author) { %>
 MAINTAINER <%= pkg.author %>
