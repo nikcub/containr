@@ -40,6 +40,15 @@ program
   .option('-v --verbose', 'Verbose output')
   .action(commands.release);
 
+program
+  .command('test')
+  .action(commands.test);
+
+program
+  .command('shell')
+  .action(commands.shell);
+
+
 commands.printBanner();
 program.parse(process.argv);
 

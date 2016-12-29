@@ -46,8 +46,8 @@ const flattenDependancies = (pkgList) => {
  *
  * take a list of packages and return a short hash name
  */
-const getLayerImageName = (pkg) => {
-  const depsList = getDependancies(pkg);
+const getLayerImageName = (pkgLocal) => {
+  const depsList = getDependancies(pkgLocal);
   const depsListFlat = flattenDependancies(depsList);
   const depsListHash = geLayerHash(depsListFlat);
   const shortHash = depsListHash.substr(-12);
@@ -57,8 +57,8 @@ const getLayerImageName = (pkg) => {
 /**
  * getNpmLayer
  */
-export const getNpmLayer = (baseImg = 'mhart/alpine-node', pkg) => {
-  const npmLayerImageName = getLayerImageName(pkg);
+export const getNpmLayer = (baseImg = 'mhart/alpine-node', pkgLocal = {}) => {
+  const npmLayerImageName = getLayerImageName(pkgLocal);
 
   l.info(`package layer npm: ${npmLayerImageName}`);
 
@@ -71,7 +71,7 @@ export const getNpmLayer = (baseImg = 'mhart/alpine-node', pkg) => {
 
   // we need to build the image;
   const dockerFile = templating.renderFile('Dockerfile.npm-layer.ejs', {
-    pkg,
+    pkg: pkgLocal,
     containr: {
       baseImg,
     },

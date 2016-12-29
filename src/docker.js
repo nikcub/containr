@@ -73,6 +73,37 @@ export const pushImage = (options = {}) => {
 };
 
 
+
+export const runContainer = (options = {}) => {
+  const userOptions = Object.assign({
+    verbose: false,
+  }, options);
+
+  const { tag, imageName, verbose } = userOptions;
+
+  const commandString = `docker run --rm -P -d ${tag}`;
+  l.debug(`${commandString}`);
+  const buildExec = exec(commandString, { silent: true });
+
+  if (verbose && buildExec.stdout.length) {
+    l.debug(buildExec.stdout);
+  }
+
+  if (buildExec.code === 0) {
+    // const [, buildId] = buildExec.stdout.match(/Successfully built ([a-f0-9]{12})/im);
+    return {
+      success: true,
+      // hash: buildId,
+    };
+  }
+
+  return {
+    success: false,
+    message: buildExec.stderr.trim(),
+  };
+};
+
+
 export const buildImage = (options = {}) => {
   const userOptions = Object.assign({}, {
     dockerfile: 'Dockerfile',
@@ -127,5 +158,6 @@ export default {
   imageExists,
   tagContainer,
   pushImage,
+  runContainer,
   buildImage,
 };

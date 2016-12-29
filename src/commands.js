@@ -18,7 +18,7 @@ let defaultRunCommandOptions = {
   client: true,
   server: false,
   watch: false,
-  configFile: 'builder.config.js'
+  configFile: 'builder.config.js',
 };
 
 /**
@@ -61,7 +61,7 @@ export const build = (buildFile = 'Dockerfile', options = {}) => {
   });
 
   if (!imageHash.success) {
-    l.error(`build error: ${imageHash}`);
+    l.error(`build error: ${imageHash.message}`);
     return false;
   }
 
@@ -110,13 +110,6 @@ export const tag = (tagVersion = '', options = {}) => {
 /**
  *
  */
-export const test = (pkg, args = []) => {
-  // const execCommand = `docker run --rm -P ${imgName}`;
-};
-
-/**
- *
- */
 export const push = (tagVersion = '', options = {}) => {
   const pkgLocal = getLocalPkg();
   const imageName = parsePackageName(pkgLocal.name);
@@ -150,13 +143,33 @@ export const push = (tagVersion = '', options = {}) => {
       l.warn(`Tag not found: ${imageName}${tagVersion}`);
     }
   });
+};
 
+export const test = () => {
+  const pkgLocal = getLocalPkg();
+  const imageName = parsePackageName(pkgLocal.name);
+  const gitTag = getGitTag();
+  const imageNameTagged = `${imageName}:${gitTag}`;
+
+  if (docker.imageExists(imageNameTagged)) {
+    const testExec = docker.runContainer({
+      tag: imageNameTagged,
+    });
+
+    if (testExec.success) {
+      l.info(`Running: ${imageNameTagged}`);
+    } else {
+      l.error(`${testExec.message}`);
+    }
+  } else {
+    l.warn(`${imageNameTagged} doesn't exist run 'containr build'`);
+  }
 };
 
 /**
  *
  */
-export const release = (pkg, args = []) => {
+export const release = () => {
   tag('latest');
   push();
 };
