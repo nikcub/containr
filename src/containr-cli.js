@@ -41,7 +41,8 @@ program
   .action(commands.release);
 
 program
-  .command('test')
+  .command('test [command]')
+  .option('-v --verbose', 'Verbose output')
   .action(commands.test);
 
 program

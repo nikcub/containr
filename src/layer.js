@@ -2,7 +2,6 @@ import path from 'path';
 import { exec } from 'shelljs';
 import crypto from 'crypto';
 import docker from './docker';
-import pkg, { getDependancies } from './pkg';
 import templating from './templating';
 import l from './logger';
 
@@ -10,7 +9,7 @@ import l from './logger';
 /**
  *
  */
-export const geLayerHash = pkgList => crypto.createHash('sha256').update(pkgList).digest('hex');
+export const getNpmLayerHash = pkgList => crypto.createHash('sha256').update(pkgList).digest('hex');
 
 
 
@@ -26,14 +25,14 @@ function* entries(obj) {
 }
 
 /**
- * flattenDependancies
+ * flattenNpmDependancies
  *
  * takes an object with keys of package names and values of versions
  * from npm package.json and flattens it into a single string of format
  *
  * name:version:name:version .. etc.
  */
-const flattenDependancies = (pkgList) => {
+const flattenNpmDependancies = (pkgList) => {
   let pkgVersionString = '';
   for (const [name, val] of entries(pkgList)) {
     pkgVersionString += `${name}:${val}:`;
@@ -42,14 +41,26 @@ const flattenDependancies = (pkgList) => {
 };
 
 /**
- * getLayerImageName
+ * getNpmDependancies
+ */
+const getNpmDependancies = (pkg, dev = true) => {
+  return Object.assign(
+    {},
+    ('dependencies' in pkg) ? pkg.dependencies : {},
+    ('devDependencies' in pkg && dev) ? pkg.devDependencies : {},
+  );
+};
+
+
+/**
+ * getNpmLayerImageName
  *
  * take a list of packages and return a short hash name
  */
-const getLayerImageName = (pkgLocal) => {
-  const depsList = getDependancies(pkgLocal);
-  const depsListFlat = flattenDependancies(depsList);
-  const depsListHash = geLayerHash(depsListFlat);
+const getNpmLayerImageName = (pkg) => {
+  const depsList = getNpmDependancies(pkg);
+  const depsListFlat = flattenNpmDependancies(depsList);
+  const depsListHash = getNpmLayerHash(depsListFlat);
   const shortHash = depsListHash.substr(-12);
   return `npmlayer/${shortHash}`;
 };
@@ -57,8 +68,8 @@ const getLayerImageName = (pkgLocal) => {
 /**
  * getNpmLayer
  */
-export const getNpmLayer = (baseImg = 'mhart/alpine-node', pkgLocal = {}) => {
-  const npmLayerImageName = getLayerImageName(pkgLocal);
+export const getNpmLayer = (baseImg = 'mhart/alpine-node', pkg) => {
+  const npmLayerImageName = getNpmLayerImageName(pkg);
 
   l.info(`package layer npm: ${npmLayerImageName}`);
 

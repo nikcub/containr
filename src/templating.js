@@ -4,11 +4,10 @@ import ejs from 'ejs';
 import tmp from 'tmp';
 import { getNpmLayer } from './layer';
 import l from './logger';
-import pkg from './pkg';
 
 tmp.setGracefulCleanup();
 
-export const getTemplate = (templateName) => {
+const getTemplate = (templateName) => {
   const templateSearchPaths = [
     process.cwd(),
     path.join(process.cwd(), 'share'),
@@ -34,16 +33,19 @@ export const getTemplate = (templateName) => {
   }
 };
 
-export const renderContent = (templateContent, vars = {}, options = {}) => {
+const renderContent = (templateContent, vars = {}, options = {}) => {
+  l.debug('renderContent', templateContent, vars);
   try {
-    return ejs.render(templateContent, vars, options);
+    let res = ejs.render(templateContent, vars, options);
+    l.debug(res);
+    return res;
   } catch (renderError) {
     console.error(`Rendering error: ${renderError.message}`);
     return '';
   }
 };
 
-export const writeTempFile = (content) => {
+const writeTempFile = (content) => {
   const tmpDir = process.cwd();
   const tf = tmp.fileSync({
     mode: '0644',
@@ -55,24 +57,20 @@ export const writeTempFile = (content) => {
   return tf.name;
 };
 
-export const renderTemplate = (templateContent, vars = {}) => {
-  // @TODO cleanup vars in templates
-  const pkgLocal = pkg.getLocalPkg();
-  const labels = pkg.getPackageLabels(pkgLocal);
+const renderTemplate = (templateContent, templateVars = {}) => {
+
+  const { pkg, labels } = templateVars;
 
   const layer = Object.assign({
-    npm: baseLayer => getNpmLayer(baseLayer, pkgLocal),
-  }, vars.layer || {});
+    npm: baseLayer => getNpmLayer(baseLayer, pkg),
+  }, templateVars.layer || {});
 
   const containr = Object.assign({
-    imageName: pkg.parsePackageName(pkgLocal.name),
-  }, vars.containr || {});
-
-  // const templateVars = Object.assign({
-  // })
+    imageName: pkg.imageName,
+  }, templateVars.containr || {});
 
   const dockerFileContent = renderContent(templateContent, {
-    pkg: pkgLocal,
+    pkg,
     labels,
     layer,
     containr,
@@ -85,19 +83,19 @@ export const renderTemplate = (templateContent, vars = {}) => {
   return dockerFilePath;
 };
 
-export const renderFile = (fileName, vars = {}) => {
+const renderFile = (fileName, vars = {}) => {
   const templateContent = getTemplate(fileName);
   return renderTemplate(templateContent, vars);
 };
 
-export const getExtension = (filename = '') => {
+const getExtension = (filename = '') => {
   if (filename.indexOf('.') === -1) {
     return '';
   }
   return filename.split('.').pop();
 };
 
-export const isEjs = (filename = '') => getExtension(filename) === 'ejs';
+const isEjs = (filename = '') => getExtension(filename) === 'ejs';
 
 export default {
   renderFile,

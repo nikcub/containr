@@ -1,31 +1,13 @@
 import path from 'path';
 import { exec } from 'shelljs';
-import { imageExists } from './docker';
-
+import l from '../logger';
 
 const npmPackageName = /^(?:@([^/]+?)[/])?([^/]+?)$/;
 
 /**
  *
  */
-export const getPackageLabels = (pkg) => {
-  const labels = [];
-
-  if (pkg.description) {
-    labels.push({
-      name: 'description',
-      value: pkg.description,
-    });
-  }
-
-  return labels;
-};
-
-
-/**
- *
- */
-export const parsePackageName = (rawName = null) => {
+const parsePackageName = (rawName = null) => {
   if (!(typeof rawName === 'string')) {
     return false;
   }
@@ -44,13 +26,19 @@ export const parsePackageName = (rawName = null) => {
 /**
  *
  */
-export const getGitTag = () => {
+const getGitTag = () => {
   const commandString = 'git rev-parse --short HEAD';
   const eh = exec(commandString, { silent: true });
   if (eh.code === 0) {
-    return eh.stdout.trim();
+    return {
+      success: true,
+      content: eh.stdout.trim(),
+    };
   }
-  return false;
+  return {
+    success: false,
+    message: eh.stderr.trim(),
+  };
 };
 
 /**
@@ -58,32 +46,29 @@ export const getGitTag = () => {
  *
  * get the package.json file as JSON for the local package
  */
-export const getLocalPkg = () => {
-  const pkgPath = path.join(process.cwd(), 'package.json');
+const getLocalPkg = (pkgDir = null) => {
+  const pkgPath = path.join((pkgDir) ? pkgDir : process.cwd(), 'package.json');
   try {
     const pkgContents = require(pkgPath); //eslint-disable-line
-    return pkgContents;
+    return {
+      success: true,
+      content: pkgContents,
+    };
   } catch (e) {
-    return false;
+    return {
+      success: false,
+      content: ('' + e).trim(),
+    }
   }
 };
 
-/**
- *
- */
-export const getDependancies = (pkg, dev = true) => {
-  return Object.assign(
-    {},
-    ('dependencies' in pkg) ? pkg.dependencies : {},
-    ('devDependencies' in pkg && dev) ? pkg.devDependencies : {},
-  );
-};
+
 
 
 /**
  *
  */
-export const getDependanciesCommand = (dev = false) => {
+const getDependanciesCommand = (dev = false) => {
   let extra = '';
   let pkgVersionString = '';
   if (dev) {
@@ -99,12 +84,96 @@ export const getDependanciesCommand = (dev = false) => {
   return pkgVersionString;
 };
 
+class Pkg extends Object {
+  constructor(dir = null) {
+    super();
+    const pkgLocalResp = getLocalPkg(dir);
+    if (!pkgLocalResp.success) {
+      l.error(`package.json error - ${pkgLocalResp.message}`);
+      l.info('Init npm for this repository with "npm init"');
+      return false;
+    }
+    this._pkgLocal = pkgLocalResp.content;
+
+    const gitTagResp = getGitTag();
+    if (!gitTagResp.success) {
+      l.error(`git error - ${gitTagResp.message}`);
+      l.info('Init git for this repository with "git init"');
+      return false;
+    }
+    this._gitTagLocal = gitTagResp.content;
+
+    this._nameLocal = ('name' in this._pkgLocal) ? this._pkgLocal.name : '';
+
+    this._nameCleanLocal = parsePackageName(this._nameLocal) || 'unnamed';
+
+    this._labels = [];
+    if (this._pkgLocal.description) {
+      this._descriptionLocal = this._pkgLocal.description;
+      this._labels.push({
+        name: 'description',
+        values: this._pkgLocal.description,
+      });
+    }
+
+    return this;
+  }
+
+  // getters and setters
+  get gitTag() {
+    return this._gitTagLocal;
+  }
+
+  get name() {
+    return this._nameLocal;
+  }
+
+  get imageName() {
+    return this._nameCleanLocal;
+  }
+
+  get imageNameTagged() {
+    return `${this.imageName}:${this.tag}`;
+  }
+
+  get tag() {
+    return this.gitTag;
+  }
+
+  get version() {
+    return this._pkgLocal.version || '';
+  }
+
+  get description() {
+    return this._descriptionLocal || '';
+  }
+
+  get dependancies() {
+    return this._pkgLocal.dependancies || {};
+  }
+
+  get devDependancies() {
+    return this._pkgLocal.devDependancies || {};
+  }
+
+  get peerDependancies() {
+    return this._pkgLocal.peerDependancies || {};
+  }
+
+  get raw() {
+    return this._pkgLocal;
+  }
+
+  get labels() {
+    return this._labels || [];
+  }
+
+
+}
+
+const setup = (pkgPath = null) => new Pkg(pkgPath);
 
 export default {
-  getPackageLabels,
+  setup,
   parsePackageName,
-  getGitTag,
-  getLocalPkg,
-  getDependancies,
-  getDependanciesCommand,
 };

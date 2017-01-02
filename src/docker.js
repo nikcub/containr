@@ -117,9 +117,16 @@ export const buildImage = (options = {}) => {
   const { dockerfile, cmdOptions, version, context, verbose } = userOptions;
   let { name } = userOptions;
 
+  l.debug(`Building - version is ${version} name is ${name}`);
+  l.debug(`options.version ${options.version}`);
+  l.debug(`userOptions.version ${userOptions.version}`);
+  l.debug(`version - ${version}`);
+
   if (version.length) {
     name = `${name}:${version}`;
   }
+
+  l.debug(`Building - name is now ${name}`);
 
   let optionsStr;
   if (Array.isArray(cmdOptions) && cmdOptions.length) {

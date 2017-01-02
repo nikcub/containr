@@ -6,8 +6,8 @@
 
 import path from 'path';
 import l, { logLevels } from './logger';
-import { getLocalPkg, getGitTag, parsePackageName } from './pkg';
-import docker, { imageExists } from './docker';
+import pkg from './pkg/register';
+import docker from './docker';
 import templating from './templating';
 import packageJson from '../package.json';
 
@@ -34,29 +34,27 @@ export const printBanner = () => {
  */
 export const build = (buildFile = 'Dockerfile', options = {}) => {
   const buildEnv = (options.production) ? 'production' : 'development';
-  const pkgLocal = getLocalPkg();
-  const { name, version } = pkgLocal;
-
   if (options.verbose) {
     l.setLevel(logLevels.debug);
   }
 
-  l.info(`Building ${name}@${version} from ${buildFile}`);
+  l.info(`Building ${pkg.imageName}@${pkg.version} from ${buildFile}`);
   l.debug(`Mode: ${buildEnv}`);
 
   let filePath = null;
 
   if (templating.isEjs(buildFile)) {
-    filePath = templating.renderFile(buildFile, { pkg: pkgLocal });
+    filePath = templating.renderFile(buildFile, { pkg });
   } else {
     filePath = path.resolve(process.cwd(), buildFile);
   }
 
-  const gitTag = getGitTag();
+  l.debug(`gitTag: ${pkg.gitTag}`);
+
   const imageHash = docker.buildImage({
     dockerfile: filePath,
-    version: gitTag,
-    name: parsePackageName(pkgLocal.name),
+    version: pkg.gitTag,
+    name: pkg.imageName,
     verbose: options.verbose,
   });
 
@@ -65,8 +63,8 @@ export const build = (buildFile = 'Dockerfile', options = {}) => {
     return false;
   }
 
-  const { name: imgName, version: imgVersion, hash } = imageHash;
-  l.info(`built ${imgName}:${imgVersion} => ${hash}`);
+  const { hash } = imageHash;
+  l.info(`built ${pkg.imageName}:${pkg.version} => ${hash}`);
   return true;
 };
 
@@ -74,23 +72,19 @@ export const build = (buildFile = 'Dockerfile', options = {}) => {
  *
  */
 export const tag = (tagVersion = '', options = {}) => {
-  const pkgLocal = getLocalPkg();
-  const containerName = parsePackageName(pkgLocal.name);
-  const gitTag = getGitTag();
-
   if (options.verbose) {
     l.setLevel(logLevels.debug);
   }
 
-  const fromTag = `${containerName}:${gitTag}`;
+  const fromTag = `${pkg.imageName}:${pkg.gitTag}`;
 
   if (!docker.imageExists(fromTag)) {
     l.error(`Error: could not find ${fromTag}`);
     return false;
   }
 
-  const version = (tagVersion) ? tagVersion : pkgLocal.version;
-  const toTag = `${containerName}:${version}`;
+  const version = (tagVersion) ? tagVersion : pkg.version;
+  const toTag = `${pkg.imageName}:${version}`;
 
   const tagExec = docker.tagContainer({
     from: fromTag,
@@ -111,11 +105,6 @@ export const tag = (tagVersion = '', options = {}) => {
  *
  */
 export const push = (tagVersion = '', options = {}) => {
-  const pkgLocal = getLocalPkg();
-  const imageName = parsePackageName(pkgLocal.name);
-  const gitTag = getGitTag();
-  const containerVersion = pkgLocal.version;
-
   if (options.verbose) {
     l.setLevel(logLevels.debug);
   }
@@ -125,11 +114,11 @@ export const push = (tagVersion = '', options = {}) => {
   if (tagVersion) {
     localTags = [tagVersion];
   } else {
-    localTags = ['latest', containerVersion, gitTag];
+    localTags = ['latest', pkg.version, pkg.gitTag];
   }
 
   localTags.forEach((localTag) => {
-    const imageNameTagged = `${imageName}:${localTag}`;
+    const imageNameTagged = `${pkg.imageName}:${localTag}`;
     if (docker.imageExists(imageNameTagged)) {
       const pushExec = docker.pushImage({
         tag: imageNameTagged,
@@ -140,16 +129,17 @@ export const push = (tagVersion = '', options = {}) => {
         l.info(`Pushed: ${imageNameTagged}`);
       }
     } else if (tagVersion) {
-      l.warn(`Tag not found: ${imageName}${tagVersion}`);
+      l.warn(`Tag not found: ${pkg.imageName}${tagVersion}`);
     }
   });
 };
 
-export const test = () => {
-  const pkgLocal = getLocalPkg();
-  const imageName = parsePackageName(pkgLocal.name);
-  const gitTag = getGitTag();
-  const imageNameTagged = `${imageName}:${gitTag}`;
+export const test = (cmd = '', options = {}) => {
+  if (options.verbose) {
+    l.setLevel(logLevels.debug);
+  }
+
+  const imageNameTagged = `${pkg.imageName}:${pkg.gitTag}`;
 
   if (docker.imageExists(imageNameTagged)) {
     const testExec = docker.runContainer({
