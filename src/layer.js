@@ -46,8 +46,8 @@ const flattenNpmDependancies = (pkgList) => {
 const getNpmDependancies = (pkg, dev = true) => {
   return Object.assign(
     {},
-    ('dependencies' in pkg) ? pkg.dependencies : {},
-    ('devDependencies' in pkg && dev) ? pkg.devDependencies : {},
+    (pkg.dependencies) ? pkg.dependencies : {},
+    (pkg.devDependencies && dev) ? pkg.devDependencies : {},
   );
 };
 
@@ -61,7 +61,9 @@ const getNpmLayerImageName = (baseImg, pkg) => {
   const baseImgClean = baseImg.replace(/\/|:/g, '-');
   const depsList = getNpmDependancies(pkg);
   const depsListFlat = flattenNpmDependancies(depsList);
+  l.debug('depsListFlat', depsListFlat);
   const depsListHash = getNpmLayerHash(depsListFlat);
+  l.debug('depsListHash', depsListHash);
   const shortHash = depsListHash.substr(-12);
   return `npmlayer/${baseImgClean}:${shortHash}`;
 };

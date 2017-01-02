@@ -148,12 +148,12 @@ class Pkg extends Object {
     return this._descriptionLocal || '';
   }
 
-  get dependancies() {
-    return this._pkgLocal.dependancies || {};
+  get dependencies() {
+    return this._pkgLocal.dependencies || {};
   }
 
-  get devDependancies() {
-    return this._pkgLocal.devDependancies || {};
+  get devDependencies() {
+    return this._pkgLocal.devDependencies || {};
   }
 
   get peerDependancies() {
