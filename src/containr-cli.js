@@ -53,8 +53,6 @@ program
 commands.printBanner();
 program.parse(process.argv);
 
-l.banner('Exited.');
-
 process.on('SIGINT', () => {
   process.exit();
 });

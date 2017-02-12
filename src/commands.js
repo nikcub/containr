@@ -146,11 +146,7 @@ export const test = (cmd = '', options = {}) => {
       tag: imageNameTagged,
     });
 
-    if (testExec.success) {
-      l.info(`Running: ${imageNameTagged}`);
-    } else {
-      l.error(`${testExec.message}`);
-    }
+    l.info(`Running: ${imageNameTagged}`);
   } else {
     l.warn(`${imageNameTagged} doesn't exist run 'containr build'`);
   }

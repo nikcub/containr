@@ -1,4 +1,5 @@
 import { exec } from 'shelljs';
+import { spawn } from 'child_process';
 import l from './logger';
 
 const isImageHash = /[a-f0-9]{12}/igm;
@@ -79,28 +80,17 @@ export const runContainer = (options = {}) => {
     verbose: false,
   }, options);
 
-  const { tag, imageName, verbose } = userOptions;
+  const { tag } = userOptions;
 
-  const commandString = `docker run --rm -P -it ${tag}`;
-  l.debug(`${commandString}`);
-  const buildExec = exec(commandString, { silent: true });
+  const argString = `run --rm -P -it ${tag}`;
 
-  if (verbose && buildExec.stdout.length) {
-    l.debug(buildExec.stdout);
-  }
+  const buildExec = spawn('docker', argString.split(' '), {
+    stdio: 'inherit',
+  });
 
-  if (buildExec.code === 0) {
-    // const [, buildId] = buildExec.stdout.match(/Successfully built ([a-f0-9]{12})/im);
-    return {
-      success: true,
-      // hash: buildId,
-    };
-  }
-
-  return {
-    success: false,
-    message: buildExec.stderr.trim(),
-  };
+  buildExec.on('close', (code) => {
+    l.banner(`Exited test process (${code})`);
+  });
 };
 
 
