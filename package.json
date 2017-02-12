@@ -1,6 +1,6 @@
 {
   "name": "containr",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Docker Build scripts for npm",
   "main": "lib/",
   "keywords": [
