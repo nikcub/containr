@@ -81,7 +81,7 @@ export const runContainer = (options = {}) => {
 
   const { tag, imageName, verbose } = userOptions;
 
-  const commandString = `docker run --rm -P -d ${tag}`;
+  const commandString = `docker run --rm -P -it ${tag}`;
   l.debug(`${commandString}`);
   const buildExec = exec(commandString, { silent: true });
 
