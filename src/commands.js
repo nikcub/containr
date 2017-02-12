@@ -161,7 +161,7 @@ export const test = (cmd = '', options = {}) => {
  */
 export const release = () => {
   tag('latest');
-  push();
+  push('latest');
 };
 
 
