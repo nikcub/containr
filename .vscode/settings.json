@@ -4,8 +4,7 @@
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
-  "editor.wrappingColumn": 120,
-  "editor.renderWhitespace": true,
+  "editor.renderWhitespace": "all",
   "files.exclude": {
         ".git": true,
         "node_modules": true
