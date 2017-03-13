@@ -6,4 +6,4 @@ MAINTAINER <%= pkg.author %>
 LABEL description="npmlayer"
 
 ADD package.json /npmcache/package.json
-RUN cd /npmcache && npm install
+RUN cd /npmcache && npm install --production

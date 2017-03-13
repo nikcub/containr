@@ -43,7 +43,7 @@ const flattenNpmDependancies = (pkgList) => {
 /**
  * getNpmDependancies
  */
-const getNpmDependancies = (pkg, dev = true) => {
+const getNpmDependancies = (pkg, dev = false) => {
   return Object.assign(
     {},
     (pkg.dependencies) ? pkg.dependencies : {},
