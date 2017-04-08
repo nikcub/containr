@@ -18,18 +18,43 @@ $ npm install --save containr
 
 ## Quickstart
 
-Build a container (default filename is `Dockerfile`)
+Build a container (default filename is `Dockerfile`) with the latest git tag
 
 ```sh
 $ containr build <filename>
 ```
+
+Push a dev tag to the repository:
+
+```
+$ containr push dev
+```
+
+Build, tag and push the `latest` tag and the npm version:
+
+```
+$ containr release
+```
+
+Setup a prepublish script that auto-builds and pushes the Docker container tagged as `latest`:
+
+In `package.json`:
+
+```json
+  ...
+  "script": {
+    "prepublish": "containr release"
+  }
+```
+
+Auto build and push the container tagged with the latest npm release version:
 
 In `package.json`:
 
 ```json
   ...
   "scripts": {
-    "postversion": "containr build && containr tag && containr push",
+    "postversion": "containr push",
 ```
 then:
 
@@ -84,7 +109,7 @@ Edit the `package.json` and add an npm hook for postversion which will build the
   "description": "",
   "main": "index.js",
   "scripts": {
-    "postversion": "containr build && containr tag && containr push"
+    "postversion": "containr push"
   },
   "keywords": [],
   "author": "",
@@ -112,7 +137,23 @@ $ cat << EOF > Dockerfile.ejs
 
 Test the build:
 
+`$ containr test`
 
+## Custom Repositories
+
+To define a custom repository to push your images to, define them in `package.json` as a repository of type docker.
+
+Example:
+
+```json
+  "repositories": [
+    {
+      "type": "docker",
+      "url": "hub-on.azurecr.io",
+      "path": "api-server"
+    }
+  ],
+```
 
 ## Commands
 

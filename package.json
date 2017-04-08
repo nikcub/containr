@@ -73,6 +73,7 @@
     "shelljs": "~0.7.5",
     "source-map-support": "~0.4.6",
     "time-stamp": "~1.0.1",
-    "tmp": "0.0.31"
+    "tmp": "0.0.31",
+    "url": "^0.11.0"
   }
 }

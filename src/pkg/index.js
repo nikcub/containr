@@ -1,5 +1,6 @@
 import path from 'path';
 import { exec } from 'shelljs';
+import url from 'url';
 import l from '../logger';
 
 const npmPackageName = /^(?:@([^/]+?)[/])?([^/]+?)$/;
@@ -21,6 +22,43 @@ const parsePackageName = (rawName = null) => {
     console.error(`parsePackageName error: ${error.message}`);
     return false;
   }
+};
+
+const parseHostUrl = (u) => {
+  const p = url.parse(u);
+  const hostValue = p.host || '';
+  const pathValue = p.pathname || '';
+  return `${hostValue}${pathValue}`;
+};
+
+/**
+ *
+ */
+const getPackageName = (pkg) => {
+  let u; // host
+  let p; // path
+
+  if ('repositories' in pkg && Array.isArray(pkg.repositories)) {
+    const dd = pkg.repositories.filter(i => (i.type === 'docker'));
+    if (dd.length) {
+      ({ url: u, path: p } = dd[0]);
+
+      if (u) {
+        u = parseHostUrl(u);
+        if (!u.endsWith('/')) {
+          u += '/';
+        }
+      }
+    }
+  }
+
+  let packageName = u || '';
+  if (p) {
+    packageName += p;
+  } else {
+    packageName += parsePackageName(pkg.name);
+  }
+  return packageName;
 };
 
 /**
@@ -105,7 +143,7 @@ class Pkg extends Object {
 
     this._nameLocal = ('name' in this._pkgLocal) ? this._pkgLocal.name : '';
 
-    this._nameCleanLocal = parsePackageName(this._nameLocal) || 'unnamed';
+    this._nameCleanLocal = getPackageName(this._pkgLocal);
 
     this._labels = [];
     if (this._pkgLocal.description) {

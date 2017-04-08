@@ -79,11 +79,12 @@ export const tag = (tagVersion = '', options = {}) => {
   const fromTag = `${pkg.imageName}:${pkg.gitTag}`;
 
   if (!docker.imageExists(fromTag)) {
-    l.error(`Error: could not find ${fromTag}`);
-    return false;
+    build();
+    // l.error(`Error: could not find ${fromTag}`);
+    // return false;
   }
 
-  const version = (tagVersion) ? tagVersion : pkg.version;
+  const version = tagVersion || pkg.version;
   const toTag = `${pkg.imageName}:${version}`;
 
   const tagExec = docker.tagContainer({
@@ -114,22 +115,22 @@ export const push = (tagVersion = '', options = {}) => {
   if (tagVersion) {
     localTags = [tagVersion];
   } else {
-    localTags = ['latest', pkg.version, pkg.gitTag];
+    localTags = [pkg.version, pkg.gitTag];
   }
 
   localTags.forEach((localTag) => {
     const imageNameTagged = `${pkg.imageName}:${localTag}`;
-    if (docker.imageExists(imageNameTagged)) {
-      const pushExec = docker.pushImage({
-        tag: imageNameTagged,
-        verbose: options.verbose,
-      });
+    if (!docker.imageExists(imageNameTagged)) {
+      tag(localTag);
+    }
 
-      if (pushExec.success) {
-        l.info(`Pushed: ${imageNameTagged}`);
-      }
-    } else if (tagVersion) {
-      l.warn(`Tag not found: ${pkg.imageName}${tagVersion}`);
+    const pushExec = docker.pushImage({
+      tag: imageNameTagged,
+      verbose: options.verbose,
+    });
+
+    if (pushExec.success) {
+      l.info(`Pushed: ${imageNameTagged}`);
     }
   });
 };
@@ -156,8 +157,7 @@ export const test = (cmd = '', options = {}) => {
  *
  */
 export const release = () => {
-  tag('latest');
-  push('latest');
+  push('latest', pkg.version);
 };
 
 
