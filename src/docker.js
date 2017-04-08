@@ -129,8 +129,8 @@ export const buildImage = (options = {}) => {
   l.debug(`Building: ${commandString}`);
   const buildExec = exec(commandString, { silent: true });
 
-  if (verbose && buildExec.stdout.length) {
-    l.debug(buildExec.stdout);
+  if (buildExec.stdout.length) {
+    l.info(buildExec.stdout);
   }
 
   if (buildExec.code === 0) {
