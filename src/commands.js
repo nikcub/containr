@@ -38,7 +38,7 @@ export const build = (buildFile = 'Dockerfile', options = {}) => {
     l.setLevel(logLevels.debug);
   }
 
-  l.info(`Building ${pkg.imageName}@${pkg.version} from ${buildFile}`);
+  l.info(`Building ${pkg.imageName}:dev from ${buildFile}`);
   l.debug(`Mode: ${buildEnv}`);
 
   let filePath = null;
@@ -49,22 +49,22 @@ export const build = (buildFile = 'Dockerfile', options = {}) => {
     filePath = path.resolve(process.cwd(), buildFile);
   }
 
-  l.debug(`gitTag: ${pkg.gitTag}`);
+  // l.debug(`gitTag: ${pkg.gitTag}`);
 
   const imageHash = docker.buildImage({
     dockerfile: filePath,
-    version: pkg.gitTag,
+    version: 'dev',
     name: pkg.imageName,
-    verbose: options.verbose,
+    verbose: true,
   });
 
   if (!imageHash.success) {
-    l.error(`build error: ${imageHash.message}`);
+    l.error(`Build error: ${imageHash.message}`);
     return false;
   }
 
   const { hash } = imageHash;
-  l.info(`built ${pkg.imageName}:${pkg.version} => ${hash}`);
+  l.info(`Finished. => ${hash}`);
   return true;
 };
 
@@ -76,12 +76,11 @@ export const tag = (tagVersion = '', options = {}) => {
     l.setLevel(logLevels.debug);
   }
 
-  const fromTag = `${pkg.imageName}:${pkg.gitTag}`;
+  const fromTag = `${pkg.imageName}:dev`;
 
+  // build image if it doesn't exist
   if (!docker.imageExists(fromTag)) {
     build();
-    // l.error(`Error: could not find ${fromTag}`);
-    // return false;
   }
 
   const version = tagVersion || pkg.version;
@@ -115,7 +114,7 @@ export const push = (tagVersion = '', options = {}) => {
   if (tagVersion) {
     localTags = [tagVersion];
   } else {
-    localTags = [pkg.version, pkg.gitTag];
+    localTags = [pkg.version];
   }
 
   localTags.forEach((localTag) => {

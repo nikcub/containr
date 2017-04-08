@@ -133,13 +133,14 @@ class Pkg extends Object {
     }
     this._pkgLocal = pkgLocalResp.content;
 
-    const gitTagResp = getGitTag();
-    if (!gitTagResp.success) {
-      l.error(`git error - ${gitTagResp.message}`);
-      l.info('Init git for this repository with "git init"');
-      return false;
-    }
-    this._gitTagLocal = gitTagResp.content;
+    // const gitTagResp = getGitTag();
+    // if (!gitTagResp.success) {
+    //   l.error(`git error - ${gitTagResp.message}`);
+    //   l.info('Init git for this repository with "git init"');
+    //   return false;
+    // }
+    // this._gitTagLocal = gitTagResp.content;
+    this._gitTagLocal = 'dev';
 
     this._nameLocal = ('name' in this._pkgLocal) ? this._pkgLocal.name : '';
 
