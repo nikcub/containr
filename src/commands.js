@@ -79,9 +79,7 @@ export const tag = (tagVersion = '', options = {}) => {
   const fromTag = `${pkg.imageName}:dev`;
 
   // build image if it doesn't exist
-  if (!docker.imageExists(fromTag)) {
-    build();
-  }
+  build();
 
   const version = tagVersion || pkg.version;
   const toTag = `${pkg.imageName}:${version}`;
